@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    container_name: backend-dev
+    volumes:
+      - .:/app                   # Mount your source code
+      - /app/node_modules        # Prevent node_modules overwrite
+    ports:
+      - "3000:3000"
+    command: npx nodemon --legacy-watch src/app.js
+    environment:
+      - NODE_ENV=development

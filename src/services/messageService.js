@@ -116,23 +116,38 @@ export const getSubAccountByNumber = async ({ number }) => {
 export const updateSegmentsSent = async ({
     locationId, 
     number, 
-    segmentSentForCurrentMessage
+    segmentSentForCurrentMessage,
+    testDate = null 
 }) => {
     try {
+        // Get current date and create date range for the full day
+        const now = testDate ? new Date(testDate) : new Date();
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+        const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+        
+        const dateRange = {
+            start: startOfDay.getTime(),
+            end: endOfDay.getTime()
+        };
+
+        // Create a composite key by appending date to the number
+        const dailyKey = `${number}#${startOfDay.getTime()}`;
+
         const getParams = {
             TableName: "analytics",
             Key: {
-                number: number
+                number: dailyKey
             }
         };
 
         const record = await docClient.get(getParams).promise();
 
         if (record.Item) {
+            // Record exists for today - update segments_sent
             const updateParams = {
                 TableName: "analytics",
                 Key: {
-                    number: number
+                    number: dailyKey
                 },
                 UpdateExpression: "SET segments_sent = if_not_exists(segments_sent, :zero) + :inc, location_id = :locId",
                 ExpressionAttributeValues: {
@@ -143,11 +158,14 @@ export const updateSegmentsSent = async ({
             };
             await docClient.update(updateParams).promise();
         } else {
+            // No record exists for today - create new record
             const putParams = {
                 TableName: "analytics",
                 Item: {
-                    number: number,
+                    number: dailyKey,
+                    original_number: number, // Keep original number for querying
                     location_id: locationId,
+                    date: dateRange,
                     segments_sent: segmentSentForCurrentMessage,
                 }
             };

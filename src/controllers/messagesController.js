@@ -24,7 +24,7 @@ export const handleTextvoltToGhl = async (req, res) => {
 
 export const handleWebhookViaTextvolt = async (req, res) => {
   logger.info(`Textvolt webhook hit ${req.body}`)
-  const {text, type, event_type, to_number, from_number, direction} = req.body.payload;
+  const {text, type, event_type, to_number, from_number, direction, testDate} = req.body.payload;
   console.log(JSON.stringify(req.body));
   let numberToMapSubAccount = null;
   let numberToSyncMessage = null;
@@ -47,7 +47,8 @@ export const handleWebhookViaTextvolt = async (req, res) => {
     await updateSegmentsSent({
       "locationId": subAccountId,
       "number": numberToMapSubAccount,
-      "segmentSentForCurrentMessage": totalMessageSegments
+      "segmentSentForCurrentMessage": totalMessageSegments,
+      testDate
     });
   }
   await syncMessageToGhl({
